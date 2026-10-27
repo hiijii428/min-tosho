@@ -873,7 +873,6 @@ async function book_cover_camera() {
         cv.CHAIN_APPROX_TC89_L1,
         );
 
-        let boxPoints = null; // 台形の頂点
         // 画像の幅・高さを取得しておく
         const canvasWidth = dst.cols;
         const canvasHeight = dst.rows;
@@ -917,8 +916,8 @@ async function book_cover_camera() {
                     let bottomRightIdx = 0;
                     for (let i = 0; i < pointList.length; i++) {
                         const point = pointList[i]
-                        ctx.fillStyle = '#f50';
-                        ctx.fillRect(point.x, point.y, 3, 3);
+                        // ctx.fillStyle = '#f50';
+                        // ctx.fillRect(point.x, point.y, 3, 3);
                         if (i === 0) {
                             xTopLeft = point.x;
                             xBottomLeft = point.x;
@@ -1020,7 +1019,8 @@ async function book_cover_camera() {
         $("#camera_cap").on("mouseup", () => {
             if (now_cap_true) return;
             now_cap_true = true;
-            $("#camera_cap").off("mouseup")
+            $("#camera_cap").hide()
+            $("#restart_cap").show()
             clearTimeout(timeout_id);
             player.pause();
             auto_cap();
@@ -1030,8 +1030,8 @@ async function book_cover_camera() {
     let desc_card = $("#desc_card");
     desc_card.html(`
 <button id="camera_cap">撮影</button>
-<button id="auto_cap">認識</button>
-<button id="restart">もう一度</button>
+<!--<button id="auto_cap">認識</button>-->
+<button id="restart_cap" style="display:none;"><img src="./img/icon/reload.svg"></button>
 <button id="ok">OK!</button>
 <select id="camera_select"></select>
 <select id="width_height">
@@ -1042,7 +1042,7 @@ async function book_cover_camera() {
 <input id="book_img_input" type="file">
 <video style="display:none;" style="max-width:90%;max-height:70%;" class="camera_video" id="player" controls playsinline muted autoplay></video>
 <canvas style="display:block;" id="input_canvas" style="max-width:90%;max-height:70%;" class="camera_video"></canvas>
-<canvas id="canvasOutput" style="display:none;"></canvas>
+<canvas id="canvasOutput" style="width:min(90%,300px);display:none;margin-inline: auto;display:block;"></canvas>
 `)
     desc_card.show()
     $("#back_black").show()
@@ -1051,7 +1051,14 @@ async function book_cover_camera() {
     let ctx = input_canvas.getContext("2d")
     const player = document.getElementById('player');
 
-    $("#restart").click(() => { no_camera = false; $("#input_canvas").show(); $("#canvasOutput").hide(); now_cap_true = false; capture(); })
+    $("#restart_cap").click(() => {
+        no_camera = false;
+        $("#input_canvas").show();
+        $("#canvasOutput").hide();
+        $("#camera_cap").show()
+        $("#restart_cap").hide()
+        now_cap_true = false; capture();
+    })
 
     let constraints = {
         video: {facingMode: { /*exact: "environment"*/ }},
@@ -1096,14 +1103,14 @@ async function book_cover_camera() {
     }
 
     let points = [];
-    document.querySelector("#input_canvas").addEventListener("mousedown", (e) => {
-        const rect = e.target.getBoundingClientRect();
-        x = e.clientX - rect.left;
-        y = e.clientY - rect.top;// clientY
-        points.push(Math.round(x)); points.push(Math.round(y));
-        console.log(points)
-    });
-    $("#value_init").click(()=>{points = []})
+    // document.querySelector("#input_canvas").addEventListener("mousedown", (e) => {
+    //     const rect = e.target.getBoundingClientRect();
+    //     x = e.clientX - rect.left;
+    //     y = e.clientY - rect.top;// clientY
+    //     points.push(Math.round(x)); points.push(Math.round(y));
+    //     console.log(points)
+    // });
+    // $("#value_init").click(()=>{points = []})
 
     async function wrap(points) {
         return new Promise(async (resolve, reject) => {
@@ -1136,6 +1143,8 @@ async function book_cover_camera() {
             src.delete();//明示的に変数削除
             $("#input_canvas").hide();
             $("#canvasOutput").show();
+            $("#canvasOutput").css("aspect-ratio",`${img_width} / ${img_height}`)
+            $("#canvasOutput").css("display","block")
             resolve()
         })
     }

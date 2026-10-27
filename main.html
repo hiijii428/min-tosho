@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="jp">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ミン図書</title>
+    <link rel="stylesheet" href="./css/jquery.raty.css">
+    <link rel="stylesheet" href="./css/toastr.min.css">
+    <link rel="stylesheet" href="./css/tool.css">
+    <link rel="stylesheet" href="./css/main.css">
+</head>
+<body>
+    <div id="desc_card"></div>
+    <div id="back_black"></div>
+    <div class="toolbar">
+        <span class="button_list">
+            <button id="isbn_button" class="book_add icon_button" title="本を追加"></button>
+            <button id="camera_button" class="camera_book_add icon_button" title="カメラで本を追加"></button>
+            <button id="export_button" class="export_csv icon_button" title="本棚をCSVエクスポート"></button>
+            <button id="setting_button" class="setting_button icon_button" title="設定"></button>
+            <button id="about_button" class="about_button icon_button" title="アプリについて"></button>
+            <button onclick="book_cover_camera()">b</button>
+        </span>
+        <span id="journal_bar">
+            ソート：<select class="other_input" id="card_sort"></select>
+            <select class="other_input" id="a2z_sort"></select><br>
+            タグ絞り込み：
+            <select id="tag_select_option" style="width:fit-content;" class="other_input">
+                <option value="and">かつ</option>
+                <option value="or">又は</option>
+            </select><br>
+            <span class="other_input" style="padding-block: 4px;">
+                <input style="border:none;padding-block:0;" id="string_search" class="other_input" placeholder="あいまい検索"
+                    type="text" />
+                <button style="border:none;padding:0;" id="all_display">X</button>
+            </span>
+        </span>
+        <div>
+            <div id="tag_list"></div>
+        </div>
+        <span class="p_markup" id="sum"></span>
+    </div>
+    <div class="margin-div"></div>
+    <div id="book-box"></div>
+    <div id="tool_div"></div>
+
+    <script src="./js/jquery-3.7.1.js"></script>
+    <script src="./js/opencv.js"></script>
+    <script src="./js/jquery.raty.js"></script>
+    <script src="./js/fuse.min.js"></script>
+    <script src="./js/toastr.min.js"></script>
+    <script src="./js/db.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/idb@7/build/umd.js"></script>    <script src="./js/tool.js"></script>
+    <script src="./js/sub.js"></script>
+    <script src="./js/isbn_search.js"></script>
+    <script src="./js/main.js"></script>
+</body>
+</html>

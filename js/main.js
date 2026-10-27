@@ -852,6 +852,31 @@ window.addEventListener("DOMContentLoaded", async () => {
 /*********************************************************************/
 /*********************************************************************/
 async function book_cover_camera() {
+    let desc_card = $("#desc_card");
+    desc_card.html(`
+<button id="camera_cap">撮影</button>
+<div>
+<button id="restart_cap" style="display:none;"><img src="./img/icon/reload.svg"></button>
+<button id="ocr_cap">OCR</button>
+</div>
+<!--<button id="auto_cap">認識</button>-->
+<!--<button id="ok">OK!</button>-->
+<select id="camera_select"></select>
+<select id="width_height">
+<option value="1x1.5">文庫本</option>
+<option value="1x1.8">新書本・漫画</option>
+<option value="1x1.4">単行本</option>
+</select>
+<input id="book_img_input" type="file">
+<video style="display:none;" style="max-width:90%;max-height:70%;" class="camera_video" id="player" controls playsinline muted autoplay></video>
+<canvas style="display:block;" id="input_canvas" style="max-width:90%;max-height:70%;" class="camera_video"></canvas>
+<canvas id="canvasOutput" style="width:min(90%,300px);display:none;margin-inline: auto;display:block;"></canvas>
+`)
+    desc_card.show()
+    $("#back_black").show()
+
+
+
     let no_camera = false;
     async function auto_cap(){
         //https://litopro.co.jp/2026/04/17/react%E3%81%A8opencv-js%E3%81%A7%E5%8F%B0%E5%BD%A2%E8%A3%9C%E6%AD%A3%E3%82%92%E3%81%97%E3%81%A6%E3%81%BF%E3%82%88%E3%81%86/
@@ -1026,26 +1051,60 @@ async function book_cover_camera() {
             auto_cap();
         })
     }
+    async function wrap(points) {
+        return new Promise(async (resolve, reject) => {
+            if(points.length != 8) reject("頂点が認識できませんでした")
+            //ここから画像処理
 
-    let desc_card = $("#desc_card");
-    desc_card.html(`
-<button id="camera_cap">撮影</button>
-<!--<button id="auto_cap">認識</button>-->
-<button id="restart_cap" style="display:none;"><img src="./img/icon/reload.svg"></button>
-<button id="ok">OK!</button>
-<select id="camera_select"></select>
-<select id="width_height">
-<option value="1x1.5">文庫本</option>
-<option value="1x1.8">新書本・漫画</option>
-<option value="1x1.4">単行本</option>
-</select>
-<input id="book_img_input" type="file">
-<video style="display:none;" style="max-width:90%;max-height:70%;" class="camera_video" id="player" controls playsinline muted autoplay></video>
-<canvas style="display:block;" id="input_canvas" style="max-width:90%;max-height:70%;" class="camera_video"></canvas>
-<canvas id="canvasOutput" style="width:min(90%,300px);display:none;margin-inline: auto;display:block;"></canvas>
-`)
-    desc_card.show()
-    $("#back_black").show()
+            let src = new cv.Mat(input_canvas.height, input_canvas.width, cv.CV_8UC4);//src set (in video)
+            let dst = new cv.Mat();//dst set (in 加工済み)
+            src = cv.imread("input_canvas")
+            // let cap = new cv.VideoCapture(player);
+            // cap.read(src);
+
+            //縦横比率計算 input_canvas.widthは仮
+            let width_height = ($("#width_height").val()).split("x")
+            let img_width = width_height[0] * input_canvas.width
+            let img_height = width_height[1] * img_width
+
+            let dsize = new cv.Size(img_width,img_height);
+            let from_point = cv.matFromArray(4, 1, cv.CV_32FC2, points);
+            let to_point = cv.matFromArray(4, 1, cv.CV_32FC2,
+                    [0, 0,
+                    img_width, 0,
+                    img_width, img_height,
+                    0, img_height]);
+            let M = cv.getPerspectiveTransform(from_point, to_point);
+            cv.warpPerspective(src, dst, M, dsize, cv.INTER_LINEAR, cv.BORDER_CONSTANT, new cv.Scalar());
+            cv.imshow('canvasOutput', dst);
+            dst.delete(); M.delete(); from_point.delete(); to_point.delete();
+
+            src.delete();//明示的に変数削除
+            $("#input_canvas").hide();
+            $("#canvasOutput").show();
+            $("#canvasOutput").css("aspect-ratio",`${img_width} / ${img_height}`)
+            $("#canvasOutput").css("display","block")
+            resolve()
+        })
+    }
+    $("#ocr_cap").click(() => {
+        console.log("ocr")
+        Tesseract.recognize(
+            input_canvas,
+            'jpn',
+            {
+                logger: function (e) {
+                    console.log(e.status)
+                    // document.querySelector('#progress').textContent = e.status;
+                }
+            }
+        )
+        .then(function(result){
+            window_prompt( (result.data.text).replace(" ","") );
+
+            isRecognizing = false;
+        });
+    })
 
     let input_canvas = document.querySelector("#input_canvas")
     let ctx = input_canvas.getContext("2d")
@@ -1112,42 +1171,6 @@ async function book_cover_camera() {
     // });
     // $("#value_init").click(()=>{points = []})
 
-    async function wrap(points) {
-        return new Promise(async (resolve, reject) => {
-            if(points.length != 8) reject("頂点が認識できませんでした")
-            //ここから画像処理
-
-            let src = new cv.Mat(input_canvas.height, input_canvas.width, cv.CV_8UC4);//src set (in video)
-            let dst = new cv.Mat();//dst set (in 加工済み)
-            src = cv.imread("input_canvas")
-            // let cap = new cv.VideoCapture(player);
-            // cap.read(src);
-
-            //縦横比率計算 input_canvas.widthは仮
-            let width_height = ($("#width_height").val()).split("x")
-            let img_width = width_height[0] * input_canvas.width
-            let img_height = width_height[1] * img_width
-
-            let dsize = new cv.Size(img_width,img_height);
-            let from_point = cv.matFromArray(4, 1, cv.CV_32FC2, points);
-            let to_point = cv.matFromArray(4, 1, cv.CV_32FC2,
-                    [0, 0,
-                    img_width, 0,
-                    img_width, img_height,
-                    0, img_height]);
-            let M = cv.getPerspectiveTransform(from_point, to_point);
-            cv.warpPerspective(src, dst, M, dsize, cv.INTER_LINEAR, cv.BORDER_CONSTANT, new cv.Scalar());
-            cv.imshow('canvasOutput', dst);
-            dst.delete(); M.delete(); from_point.delete(); to_point.delete();
-
-            src.delete();//明示的に変数削除
-            $("#input_canvas").hide();
-            $("#canvasOutput").show();
-            $("#canvasOutput").css("aspect-ratio",`${img_width} / ${img_height}`)
-            $("#canvasOutput").css("display","block")
-            resolve()
-        })
-    }
     $("#ok").click(() => {
         console.log(input_canvas.toDataURL("image/jpeg"));
     })
